@@ -7,21 +7,20 @@ import frc.robot.system.input.ControllerManager;
 
 public class Tank {
     private static Controller primaryController = null;
-    private static boolean isPressed = false;
     private static Notifier notifier = null;
 
     public static boolean initialize() {
         primaryController = ControllerManager.getControllerFromPort(Consts.ControllerInfo.primaryControllerPort);
-        if (!primaryController.supportsActionCluster()) {
-            System.err.println("primary controller does not support the actions cluster");
+        if (!primaryController.supportsPrimaryAxis()) {
+            System.err.println("primary controller does not support the Primary joystick");
+            return false;
+        }
+        if (!primaryController.supportsSecondaryAxis()) {
+            System.err.println("primary controller does not support the Secondary joystick");
             return false;
         }
         notifier = new Notifier(() -> {
-            boolean primePressed = primaryController.isPrimaryButtonPressed();
-            if (primePressed != isPressed && primePressed == true) {
-                System.out.println("primary button pressed");
-            }
-            isPressed = primePressed;
+            
         });
         notifier.startPeriodic(0.010);
         return true;
