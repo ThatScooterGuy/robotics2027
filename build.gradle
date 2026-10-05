@@ -74,7 +74,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'io.github.classgraph:classgraph:4.8.196'
-    implementation 'org.jctools:jctools-core:4.0.1'
+    implementation 'org.ejml:ejml-simple:0.43.1'
 }
 
 test {

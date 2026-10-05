@@ -37,7 +37,7 @@ public class ModeChangeBroadcaster {
             }
             lastEvent = event;
         });
-        notifier.startPeriodic(0.005);
+        notifier.startPeriodic(0.010);
         initialized = true;
     }
 
