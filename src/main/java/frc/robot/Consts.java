@@ -16,4 +16,8 @@ public class Consts {
         public static final int primaryControllerPort = 0;
         public static final int secondaryControllerPort = 1;
     }
+    public static class Repeat {
+        //how often loop.Repeat runs code
+        public static final double loopPeriod = 0.020;
+    }
 }

@@ -1,5 +1,6 @@
 package frc.robot.system.input;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Function;
 
@@ -8,17 +9,16 @@ import frc.robot.api.input.Controller;
 
 public class ControllerManager {
     private static AtomicReferenceArray<Controller> controllers = new AtomicReferenceArray<>(6);
-    private static boolean initialized = false;
+    private static AtomicBoolean initialized = new AtomicBoolean(false);
     private static Object createLock = new Object();
 
     private static void init() {
         for (int i = 0; i < Consts.ControllerInfo.controllersToInstate.size(); i += 1) {
             allocatePort(i, Consts.ControllerInfo.controllersToInstate.get(i));
         }
-        initialized = true;
     }
     public static boolean initialize() {
-        if (!initialized) init();
+        if (!initialized.getAndSet(true)) init();
         return true;
     }
     public static void allocatePort(int port, Function<Integer, Controller> constructor) {
@@ -29,7 +29,7 @@ public class ControllerManager {
         }
     }
     public static Controller getControllerFromPort(int port) {
-        if (!initialized) init();
+        if (!initialized.getAndSet(true)) init();
         if (port > 5) throw new IndexOutOfBoundsException("port must be a number between 0-5");
         Controller controller = controllers.get(port);
         if (controller == null) throw new IllegalStateException("Controller must be initialized before access");
