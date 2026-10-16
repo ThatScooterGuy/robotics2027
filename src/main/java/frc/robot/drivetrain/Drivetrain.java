@@ -1,68 +1,103 @@
 package frc.robot.drivetrain;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.units.measure.Angle;
+import frc.robot.Consts;
+import frc.robot.Setup;
+import frc.robot.strict.wall.motor.TalonFXMotor;
+
 public class Drivetrain {
-    private MathShit math = null;
+    private MathShitDrivetrain math = null;
 
-    private TalonFX topLeftDriveMotor = null;
-    private TalonFX topRightDriveMotor = null;
-    private TalonFX bottomLeftDriveMotor = null;
-    private TalonFX bottomRightDriveMotor = null;
+    private TalonFXMotor[] driveMotors = null;
+    private SparkMax[] rotationMotors = null;
+    private CANcoder[] canCoders = null;
 
-    private SparkMax topLeftRotationMotor = null;
-    private SparkMax topRightRotationMotor = null;
-    private SparkMax bottomLeftRotationMotor = null;
-    private SparkMax bottomRightRotationMotor = null;
-    
-    private CANcoder topLeftCANCoder = null;
-    private CANcoder topRightCANCoder = null;
-    private CANcoder bottomLeftCANCoder = null;
-    private CANcoder bottomRightCANCoder = null;
+    private VelocityVoltage[] driveVelocities = null;
+    private SparkClosedLoopController[] rotationControllers = null;
 
-    private double xVelocity = 0;
-    private double yVelocity = 0;
+    private StatusSignal<Angle>[] rotationSignals = null;
+
+    private Vector2 velocity = new Vector2(1, 0);
     private double omega = 0;
 
-    private double oldXVelocity = Double.NaN;
-    private double oldYVelocity = Double.NaN;
+    private Vector2 oldVelocity = new Vector2(Double.NaN, Double.NaN);
     private double oldOmega = Double.NaN;
 
+    @SuppressWarnings("unchecked")
     public Drivetrain(CANBus canBus) {
-        math = new MathShit();
+        math = new MathShitDrivetrain();
 
-        topLeftDriveMotor = new TalonFX(0, canBus);
-        topRightDriveMotor = new TalonFX(1, canBus);
-        bottomLeftDriveMotor = new TalonFX(2, canBus);
-        bottomRightDriveMotor = new TalonFX(3, canBus);
+        driveMotors = new TalonFXMotor[4];
+        rotationMotors = new SparkMax[4];
+        canCoders = new CANcoder[4];
+        driveVelocities = new VelocityVoltage[4];
+        rotationControllers = new SparkClosedLoopController[4];
+        rotationSignals = (StatusSignal<Angle>[]) new StatusSignal[4];
 
-        topLeftRotationMotor = new SparkMax(4,MotorType.kBrushless);
-        topRightRotationMotor = new SparkMax(5,MotorType.kBrushless);
-        bottomLeftRotationMotor = new SparkMax(6,MotorType.kBrushless);
-        bottomRightRotationMotor = new SparkMax(7,MotorType.kBrushless);
+        for (int i = 0; i < 4; i += 1) {
+            driveMotors[i] = new TalonFXMotor(i, canBus);
+            rotationMotors[i] = new SparkMax(i + 4, MotorType.kBrushless);
+            canCoders[i] = new CANcoder(i + 8, canBus);
+            driveVelocities[i] = new VelocityVoltage(0.).withSlot(0);
+            rotationControllers[i] = rotationMotors[i].getClosedLoopController();
+            rotationSignals[i] = canCoders[i].getAbsolutePosition();
+        }
 
-        topLeftCANCoder = new CANcoder(8, canBus);
-        topRightCANCoder = new CANcoder(9, canBus);
-        bottomLeftCANCoder = new CANcoder(10, canBus);
-        bottomRightCANCoder = new CANcoder(11, canBus);
+        Setup.setUpDriveMotors(driveMotors);
+    }
+
+    private void getWheelAngles(double[] buffer) {
+        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1)
+            buffer[i] = rotationSignals[i].refresh().getValueAsDouble() * Math.PI * 2;
+    }
+
+    private void setWheelAndAngle(double[] wheelVelocities, double[] wheelAngles) {
+        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1) {
+            driveMotors[i].setControl(driveVelocities[i].withVelocity(wheelVelocities[i]));
+            rotationControllers[i].setSetpoint(wheelAngles[i] / (Math.PI * 2), ControlType.kPosition);
+        }
+    }
+
+    public void setNewControls(double x, double y, double omega) {
+        velocity.x = x;
+        velocity.y = y;
+        this.omega = omega;
     }
 
     public void update() {
-        if (xVelocity == oldXVelocity || yVelocity == oldYVelocity || omega == oldOmega) {
+        if (Math.abs(velocity.x - oldVelocity.x) < 0.07 
+         && Math.abs(velocity.y - oldVelocity.y) < 0.07  
+         && Math.abs(omega - oldOmega) < 0.07) {
             return;
         } else {
-            oldXVelocity = xVelocity;
-            oldYVelocity = yVelocity;
+            oldVelocity.copy(velocity);
+            oldOmega = omega;
         }
-
-        Vector2[] wheelVectors = math.calculateInverseKinematic(xVelocity, yVelocity, omega);
-
-        double[] wheelRotations = math.extractRotationFromVectors(wheelVectors);
-        double[] wheelVelocitys = math.extractVelocityFromVectors(wheelVectors);
         
+        double[] wheelAngleBuffer = math.getWheelAngleBuffer();
+        getWheelAngles(wheelAngleBuffer);
+
+        math.calculateInverseKinematic(velocity, omega);
+
+        double[] wheelAngles  = math.getAngles();
+        double[] wheelVelocities = math.getVelocities();
+
+        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1)
+            System.out.println(wheelVelocities[i]);
+        setWheelAndAngle(wheelVelocities, wheelAngles);
+    }
+
+    public void simUpdate() {
+        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1)
+            driveMotors[i].advanceSimulation(driveVelocities[i].getVelocityMeasure());
     }
 }

@@ -13,4 +13,22 @@ public class Vector2 {
         this.x = x;
         this.y = y;
     }
+
+    public void copy(Vector2 other) {
+        x = other.x;
+        y = other.y;
+    }
+
+    public double dot(Vector2 other) {
+        return x * other.x + y * other.y;
+    }
+
+    public double length() {
+        return Math.sqrt(this.dot(this));
+    }
+
+    public void mul(double scalar) {
+        x *= scalar;
+        y *= scalar;
+    }
 }
