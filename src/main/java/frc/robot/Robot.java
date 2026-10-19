@@ -20,13 +20,13 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic() {
-
-
         double x = controller.getLeftX() * Consts.Wheels.maxVelocity;
         double y = controller.getLeftY() * Consts.Wheels.maxVelocity;
         double omega = controller.getRightX() * Consts.MathConsts.Tau;
         drivetrain.setNewControls(x, y, omega);
         drivetrain.update();
+
+        drivetrain.log();
     }
 
     @Override

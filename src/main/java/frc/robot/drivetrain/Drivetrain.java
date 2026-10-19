@@ -12,9 +12,10 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.units.measure.Angle;
 import frc.robot.Consts;
 import frc.robot.Setup;
+import frc.robot.log.Loggable;
 import frc.robot.strict.wall.motor.TalonFXMotor;
 
-public class Drivetrain {
+public class Drivetrain implements Loggable {
     private MathShitDrivetrain math = null;
 
     private TalonFXMotor[] driveMotors = null;
@@ -44,7 +45,7 @@ public class Drivetrain {
         rotationSignals = (StatusSignal<Angle>[]) new StatusSignal[4];
 
         for (int i = 0; i < 4; i += 1) {
-            driveMotors[i] = new TalonFXMotor(i, canBus);
+            driveMotors[i] = new TalonFXMotor(i, canBus, String.valueOf(i));
             rotationMotors[i] = new SparkMax(i + 4, MotorType.kBrushless);
             canCoders[i] = new CANcoder(i + 8, canBus);
             driveVelocities[i] = new VelocityVoltage(0.).withSlot(0);
@@ -57,7 +58,7 @@ public class Drivetrain {
 
     private void getWheelAngles(double[] buffer) {
         for (int i = 0; i < Consts.Wheels.wheelCount; i += 1)
-            buffer[i] = rotationSignals[i].refresh().getValueAsDouble() * Math.PI * 2;
+            buffer[i] = rotationSignals[i].refresh().getValueAsDouble() * Consts.MathConsts.Tau;
     }
 
     private void setWheelAndAngle(double[] wheelVelocities, double[] wheelAngles) {
@@ -91,13 +92,16 @@ public class Drivetrain {
         double[] wheelAngles  = math.getAngles();
         double[] wheelVelocities = math.getVelocities();
 
-        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1)
-            System.out.println(wheelVelocities[i]);
         setWheelAndAngle(wheelVelocities, wheelAngles);
     }
 
     public void simUpdate() {
         for (int i = 0; i < Consts.Wheels.wheelCount; i += 1)
             driveMotors[i].advanceSimulation(driveVelocities[i].getVelocityMeasure());
+    }
+
+    public void log() {
+        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1)
+            driveMotors[i].log();
     }
 }
