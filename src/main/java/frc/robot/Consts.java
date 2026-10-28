@@ -3,7 +3,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
-import frc.robot.drivetrain.Vector2;
+import frc.robot.lib.mathshit.Vector2;
 
 public class Consts {
     public static class Wheels {

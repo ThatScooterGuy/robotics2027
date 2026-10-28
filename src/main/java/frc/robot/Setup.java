@@ -13,7 +13,7 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import frc.robot.strict.wall.motor.TalonFXMotor;
+import frc.robot.lib.rappers.motors.TalonFXRapper;
 
 public class Setup {
     private static boolean checkDriveMotorConfigStale(TalonFX motor) {
@@ -70,7 +70,7 @@ public class Setup {
 
         System.out.println("config changed");
     }
-    public static void setUpDriveMotors(TalonFXMotor[] motors) {
-        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1) setUpDriveMotor(motors[i].inner());
+    public static void setUpDriveMotors(TalonFXRapper[] motors) {
+        for (int i = 0; i < Consts.Wheels.wheelCount; i += 1) setUpDriveMotor(motors[i].getTalonFX());
     }
 }

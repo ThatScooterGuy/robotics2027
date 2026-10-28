@@ -1,4 +1,4 @@
-package frc.robot.drivetrain;
+package frc.robot.lib.mathshit;
 
 public class Vector2 {
     public double x;

@@ -4,7 +4,7 @@ import com.ctre.phoenix6.CANBus;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.drivetrain.Drivetrain;
+import frc.robot.subsystems.Drivetrain;
 
 public class Robot extends TimedRobot {
     private CANBus canBus = null;
@@ -25,8 +25,7 @@ public class Robot extends TimedRobot {
         double omega = controller.getRightX() * Consts.MathConsts.Tau;
         drivetrain.setNewControls(x, y, omega);
         drivetrain.update();
-
-        drivetrain.log();
+        drivetrain.simUpdate();
     }
 
     @Override
