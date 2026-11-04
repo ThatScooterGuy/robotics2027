@@ -15,7 +15,7 @@ public class SparkMaxRapper {
         Brushless,
         Brushed,
     }
- j
+    
     @Getter
     SparkMax sparkMax = null;
 
